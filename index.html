@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>경희대 사랑의 감각지도</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --pink: #D4537E;
+    --pink-light: #FBEAF0;
+    --pink-mid: #F4C0D1;
+    --text: #1a1a1a;
+    --text-muted: #666;
+    --border: rgba(0,0,0,0.12);
+    --bg: #fff;
+    --bg-secondary: #f7f7f5;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --text: #f0f0f0;
+      --text-muted: #aaa;
+      --border: rgba(255,255,255,0.12);
+      --bg: #1c1c1e;
+      --bg-secondary: #2c2c2e;
+      --pink-light: #3a1e2a;
+    }
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg-secondary);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+  }
+  .form-wrap {
+    max-width: 540px;
+    margin: 0 auto;
+  }
+  .form-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .badge {
+    display: inline-block;
+    background: var(--pink-light);
+    color: var(--pink);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+    letter-spacing: 0.02em;
+  }
+  .form-header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.4;
+    margin-bottom: 10px;
+  }
+  .form-header p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+  .progress-wrap {
+    margin-bottom: 1.5rem;
+  }
+  .step-count {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: right;
+    margin-bottom: 6px;
+  }
+  .progress-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--pink);
+    border-radius: 2px;
+    transition: width 0.35s ease;
+  }
+  .step { display: none; }
+  .step.active { display: block; }
+
+  .q-card {
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .q-label {
+    font-size: 12px;
+    color: var(--pink);
+    font-weight: 500;
+    margin-bottom: 5px;
+    letter-spacing: 0.04em;
+  }
+  .q-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  /* 장소 */
+  .place-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .place-btn {
+    background: var(--bg-secondary);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    line-height: 1.5;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .place-btn:hover { border-color: var(--pink); }
+  .place-btn.selected {
+    border: 1.5px solid var(--pink);
+    background: var(--pink-light);
+    color: var(--pink);
+    font-weight: 500;
+  }
+
+  /* 슬라이더 */
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  .slider-label { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+  input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--pink);
+    cursor: pointer;
+  }
+  .slider-val {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--pink);
+    min-width: 20px;
+    text-align: center;
+  }
+
+  /* 컬러 */
+  .color-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .color-item { text-align: center; cursor: pointer; }
+  .color-dot {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 2.5px solid transparent;
+    margin: 0 auto 4px;
+    transition: transform 0.12s;
+  }
+  .color-item:hover .color-dot { transform: scale(1.1); }
+  .color-item.selected .color-dot {
+    border-color: var(--text);
+    transform: scale(1.13);
+  }
+  .color-name {
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  /* 텍스트 입력 */
+  textarea, input[type=text] {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 11px 13px;
+    font-size: 14px;
+    color: var(--text);
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  textarea:focus, input[type=text]:focus { border-color: var(--pink); }
+
+  /* 냄새 */
+  .smell-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .smell-btn {
+    background: var(--bg-secondary);
+    border: 0.5px solid var(--border);
+    border-radius: 20px;
+    padding: 7px 15px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .smell-btn:hover { border-color: var(--pink); }
+  .smell-btn.selected {
+    background: var(--pink-light);
+    border-color: var(--pink);
+    color: var(--pink);
+    font-weight: 500;
+  }
+
+  /* 사랑 여부 */
+  .love-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .love-btn {
+    flex: 1;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    cursor: pointer;
+    text-align: center;
+    color: var(--text);
+    transition: all 0.15s;
+  }
+  .love-btn.selected {
+    background: var(--pink-light);
+    border-color: var(--pink);
+    color: var(--pink);
+    font-weight: 600;
+  }
+
+  /* 네비 버튼 */
+  .nav-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 1.5rem;
+  }
+  .btn-prev {
+    flex: 1;
+    padding: 13px;
+    background: var(--bg-secondary);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-family: inherit;
+  }
+  .btn-next {
+    flex: 2;
+    padding: 13px;
+    background: var(--pink);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #fff;
+    font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .btn-next:hover { opacity: 0.88; }
+
+  /* 완료 */
+  .submit-card {
+    text-align: center;
+    padding: 2.5rem 1rem;
+  }
+  .submit-icon { font-size: 48px; margin-bottom: 14px; }
+  .submit-card h2 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  .submit-card p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin-bottom: 20px;
+  }
+  .summary-area { margin: 14px 0; }
+  .summary-pill {
+    display: inline-block;
+    background: var(--pink-light);
+    color: var(--pink);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 13px;
+    border-radius: 20px;
+    margin: 3px;
+  }
+
+  /* 기타 입력 */
+  .extra-input {
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+<div class="form-wrap">
+
+  <div class="form-header">
+    <div class="badge">경희대 사랑의 감각지도</div>
+    <h1>이 장소에서<br>당신의 몸은 무엇을 기억하나요?</h1>
+    <p>솔직한 감각 기억이 지도를 만듭니다.<br>1~2분이면 충분해요.</p>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="step-count" id="stepCount">1 / 6</div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width:16.6%"></div>
+    </div>
+  </div>
+
+  <!-- STEP 1 : 장소 -->
+  <div id="step1" class="step active">
+    <div class="q-card">
+      <div class="q-label">Q1</div>
+      <div class="q-title">지금 어느 구역에 있나요?</div>
+      <div class="place-grid">
+        <button class="place-btn" onclick="selectPlace(this,'청운관·호관·미대길')">청운관 · 호관<br>미대길</button>
+        <button class="place-btn" onclick="selectPlace(this,'본관·도서관·평전')">본관 · 도서관<br>평전</button>
+        <button class="place-btn" onclick="selectPlace(this,'네오관·운동장·행긱·S21')">네오관 · 운동장<br>행긱 · S21</button>
+        <button class="place-btn" onclick="selectPlace(this,'구한의대·정경대·경영대·크라운관')">구한의대 · 정경대<br>경영대 · 크라운관</button>
+        <button class="place-btn" style="grid-column: span 2;" onclick="selectPlace(this,'기타')">기타</button>
+      </div>
+      <div class="extra-input">
+        <input type="text" id="otherPlace" placeholder="어느 곳인가요?" style="display:none;" />
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-next" onclick="next(1)">다음 →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2 : 온도 + 색 -->
+  <div id="step2" class="step">
+    <div class="q-card">
+      <div class="q-label">Q2</div>
+      <div class="q-title">이 장소의 온도감은?</div>
+      <div class="slider-row">
+        <span class="slider-label">차갑다</span>
+        <input type="range" min="1" max="10" value="5" step="1" id="tempSlider"
+          oninput="document.getElementById('tempVal').textContent=this.value" />
+        <span class="slider-label">따뜻하다</span>
+        <span class="slider-val" id="tempVal">5</span>
+      </div>
+    </div>
+    <div class="q-card">
+      <div class="q-label">Q3</div>
+      <div class="q-title">이 장소를 색깔로 표현하면?</div>
+      <div class="color-grid" id="colorGrid">
+        <div class="color-item" onclick="selectColor(this,'#F4C0D1','핑크')">
+          <div class="color-dot" style="background:#F4C0D1"></div>
+          <span class="color-name">핑크</span>
+        </div>
+        <div class="color-item" onclick="selectColor(this,'#F0997B','코랄')">
+          <div class="color-dot" style="background:#F0997B"></div>
+          <span class="color-name">코랄</span>
+        </div>
+        <div class="color-item" onclick="selectColor(this,'#FAC775','옐로')">
+          <div class="color-dot" style="background:#FAC775"></div>
+          <span class="color-name">옐로</span>
+        </div>
+        <div class="color-item" onclick="selectColor(this,'#C0DD97','그린')">
+          <div class="color-dot" style="background:#C0DD97"></div>
+          <span class="color-name">그린</span>
+        </div>
+        <div class="color-item" onclick="selectColor(this,'#85B7EB','블루')">
+          <div class="color-dot" style="background:#85B7EB"></div>
+          <span class="color-name">블루</span>
+        </div>
+        <div class="color-item" onclick="selectColor(this,'#AFA9EC','퍼플')">
+          <div class="color-dot" style="background:#AFA9EC"></div>
+          <span class="color-name">퍼플</span>
+        </div>
+        <div class="color-item" onclick="selectColor(this,'#B4B2A9','그레이')">
+          <div class="color-dot" style="background:#B4B2A9"></div>
+          <span class="color-name">그레이</span>
+        </div>
+        <div class="color-item" onclick="selectColor(this,'#5DCAA5','민트')">
+          <div class="color-dot" style="background:#5DCAA5"></div>
+          <span class="color-name">민트</span>
+        </div>
+        <div class="color-item" onclick="selectColor(this,'#E24B4A','레드')">
+          <div class="color-dot" style="background:#E24B4A"></div>
+          <span class="color-name">레드</span>
+        </div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-prev" onclick="prev(2)">← 이전</button>
+      <button class="btn-next" onclick="next(2)">다음 →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3 : 소리 -->
+  <div id="step3" class="step">
+    <div class="q-card">
+      <div class="q-label">Q4</div>
+      <div class="q-title">이 장소에서 들리는 소리를 묘사해줘</div>
+      <textarea id="soundInput" rows="4"
+        placeholder="예: 웃음소리, 나뭇잎 바람 소리, 발걸음, 멀리서 들리는 음악..."></textarea>
+    </div>
+    <div class="nav-row">
+      <button class="btn-prev" onclick="prev(3)">← 이전</button>
+      <button class="btn-next" onclick="next(3)">다음 →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4 : 냄새 -->
+  <div id="step4" class="step">
+    <div class="q-card">
+      <div class="q-label">Q5</div>
+      <div class="q-title">이 장소에서 맡은 냄새는? (복수 선택 가능)</div>
+      <div class="smell-grid">
+        <button class="smell-btn" onclick="toggleSmell(this,'풀·흙 냄새')">풀·흙 냄새</button>
+        <button class="smell-btn" onclick="toggleSmell(this,'음식 냄새')">음식 냄새</button>
+        <button class="smell-btn" onclick="toggleSmell(this,'커피 냄새')">커피 냄새</button>
+        <button class="smell-btn" onclick="toggleSmell(this,'사람·향수')">사람·향수</button>
+        <button class="smell-btn" onclick="toggleSmell(this,'꽃 냄새')">꽃 냄새</button>
+        <button class="smell-btn" onclick="toggleSmell(this,'비·습기')">비·습기</button>
+        <button class="smell-btn" onclick="toggleSmell(this,'무향·깨끗함')">무향·깨끗함</button>
+        <button class="smell-btn" onclick="toggleSmell(this,'기타')">기타</button>
+      </div>
+      <input type="text" id="smellOther" placeholder="직접 입력" style="display:none;" />
+    </div>
+    <div class="nav-row">
+      <button class="btn-prev" onclick="prev(4)">← 이전</button>
+      <button class="btn-next" onclick="next(4)">다음 →</button>
+    </div>
+  </div>
+
+  <!-- STEP 5 : 사랑 + 맛 -->
+  <div id="step5" class="step">
+    <div class="q-card">
+      <div class="q-label">Q6</div>
+      <div class="q-title">이 장소에서 사랑을 느낀 적 있나요?</div>
+      <div class="love-row">
+        <button class="love-btn" id="loveY" onclick="selectLove('yes')">있어요 🌸</button>
+        <button class="love-btn" id="loveN" onclick="selectLove('no')">없어요</button>
+      </div>
+      <textarea id="loveDesc" rows="3"
+        placeholder="있다면 어떤 순간이었나요? (선택 사항)"
+        style="display:none;"></textarea>
+    </div>
+    <div class="q-card">
+      <div class="q-label">Q7</div>
+      <div class="q-title">이 장소를 맛으로 표현하면?</div>
+      <input type="text" id="tasteInput"
+        placeholder="예: 달달한 초코맛, 씁쓸한 아메리카노, 새콤한 유자..." />
+    </div>
+    <div class="nav-row">
+      <button class="btn-prev" onclick="prev(5)">← 이전</button>
+      <button class="btn-next" onclick="submitForm()">제출하기 ✓</button>
+    </div>
+  </div>
+
+  <!-- STEP 6 : 완료 -->
+  <div id="step6" class="step">
+    <div class="q-card submit-card">
+      <div class="submit-icon">🌸</div>
+      <h2>응답 완료!</h2>
+      <p>당신의 감각 기억이<br>경희대 사랑의 지도에 새겨졌어요.</p>
+      <div class="summary-area" id="summaryArea"></div>
+      <button class="btn-next" style="width:100%; margin-top:8px;"
+        onclick="restart()">다른 장소도 응답하기 →</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  var data = {
+    place: '', temp: 5, color: '', colorName: '',
+    sound: '', smells: [], loveYN: '', loveDesc: '', taste: ''
+  };
+
+  function selectPlace(btn, val) {
+    document.querySelectorAll('.place-btn').forEach(function(b){ b.classList.remove('selected'); });
+    btn.classList.add('selected');
+    data.place = val;
+    var oi = document.getElementById('otherPlace');
+    oi.style.display = val === '기타' ? 'block' : 'none';
+  }
+
+  function selectColor(item, hex, name) {
+    document.querySelectorAll('.color-item').forEach(function(d){ d.classList.remove('selected'); });
+    item.classList.add('selected');
+    data.color = hex;
+    data.colorName = name;
+  }
+
+  function toggleSmell(btn, val) {
+    btn.classList.toggle('selected');
+    if (btn.classList.contains('selected')) {
+      data.smells.push(val);
+    } else {
+      data.smells = data.smells.filter(function(s){ return s !== val; });
+    }
+    document.getElementById('smellOther').style.display =
+      data.smells.indexOf('기타') > -1 ? 'block' : 'none';
+  }
+
+  function selectLove(val) {
+    data.loveYN = val;
+    document.getElementById('loveY').classList.toggle('selected', val === 'yes');
+    document.getElementById('loveN').classList.toggle('selected', val === 'no');
+    document.getElementById('loveDesc').style.display = val === 'yes' ? 'block' : 'none';
+  }
+
+  function next(step) {
+    if (step === 1) {
+      if (!data.place) { alert('장소를 선택해주세요!'); return; }
+      if (data.place === '기타') {
+        var v = document.getElementById('otherPlace').value.trim();
+        data.place = v || '기타';
+      }
+    }
+    if (step === 2) {
+      data.temp = parseInt(document.getElementById('tempSlider').value);
+    }
+    if (step === 3) {
+      data.sound = document.getElementById('soundInput').value;
+    }
+    showStep(step + 1);
+  }
+
+  function prev(step) { showStep(step - 1); }
+
+  function submitForm() {
+    data.taste = document.getElementById('tasteInput').value;
+    data.loveDesc = document.getElementById('loveDesc').value;
+    showSummary();
+    showStep(6);
+    // 여기에 Google Sheets / FormSpree 연동 코드 추가 가능
+    console.log('응답 데이터:', JSON.stringify(data, null, 2));
+  }
+
+  function showStep(n) {
+    document.querySelectorAll('.step').forEach(function(s){ s.classList.remove('active'); });
+    document.getElementById('step' + n).classList.add('active');
+    document.getElementById('stepCount').textContent = n + ' / 6';
+    document.getElementById('progressFill').style.width = (n / 6 * 100) + '%';
+    window.scrollTo(0, 0);
+  }
+
+  function showSummary() {
+    var items = [
+      data.place,
+      '온도 ' + data.temp + '/10',
+      data.colorName || null,
+      data.smells.length ? data.smells.join('·') : null,
+      data.loveYN === 'yes' ? '사랑 경험 있음 🌸' : '사랑 경험 없음'
+    ].filter(Boolean);
+    document.getElementById('summaryArea').innerHTML =
+      items.map(function(i){ return '<span class="summary-pill">' + i + '</span>'; }).join('');
+  }
+
+  function restart() {
+    data = { place:'', temp:5, color:'', colorName:'', sound:'', smells:[], loveYN:'', loveDesc:'', taste:'' };
+    document.querySelectorAll('.place-btn, .color-item, .smell-btn, .love-btn')
+      .forEach(function(el){ el.classList.remove('selected'); });
+    ['soundInput','tasteInput','loveDesc','otherPlace','smellOther']
+      .forEach(function(id){ document.getElementById(id).value = ''; });
+    document.getElementById('loveDesc').style.display = 'none';
+    document.getElementById('smellOther').style.display = 'none';
+    document.getElementById('otherPlace').style.display = 'none';
+    document.getElementById('tempSlider').value = 5;
+    document.getElementById('tempVal').textContent = '5';
+    showStep(1);
+  }
+</script>
+</body>
+</html>
